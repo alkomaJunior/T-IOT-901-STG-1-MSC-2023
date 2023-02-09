@@ -74,6 +74,7 @@
 #include "MODULE_GRBL13.2.h"
 #include "GoPlus2.h"
 #include "Arduino_JSON.h"
+#include "M5ez.h"
 #include <cassert>
 
 /**********************************************************************************************************************/

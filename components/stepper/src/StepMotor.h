@@ -49,10 +49,11 @@ public:
 
     StepMotor(); // Default constructor prototype
     static void step_motor_configuration();
-    static String step_motor_status();
     static void step_motor_run(int axes, int speed);
-    static void step_motor_inlock();
+    static void step_motor_run_back(int axes, int speed);
     static void step_motor_unlock();
+    static void step_motor_wait_idle();
+    static String step_motor_status();
 };
 
 

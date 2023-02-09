@@ -1,7 +1,6 @@
 /* Extensive API documentation is at https://github.com/ropg/ezTime */
 
 #ifndef _EZTIME_H_
-#ifdef __cplusplus
 #define _EZTIME_H_
 
 //Sets the language for the names of Months and Days. See the src/lang directory for supported languages
@@ -24,9 +23,10 @@
 
 // Cache mechanism, either EEPROM or NVS, not both. (See README)
 #define EZTIME_CACHE_EEPROM
-// #define EZTIME_CACHE_NVS
+//#define EZTIME_CACHE_NVS
 
 // Uncomment if you want to access ezTime functions only after "ezt."
+#ifdef __cplusplus
 // (to avoid naming conflicts in bigger projects, e.g.) 
 // #define EZTIME_EZT_NAMESPACE
 

@@ -14,6 +14,8 @@
 #include "Base.h"
 #include <utility>
 
+Preferences prefs;
+
 /**********************************************************************************************************************/
 /* PRIVATE METHODS CODE                                                                                               */
 /**********************************************************************************************************************/
@@ -23,32 +25,6 @@
 /**********************************************************************************************************************/
 
             /********************************  Core methods ********************************/
-
-String Base::wifi_connect(WiFiMulti * wiFiMulti) {
-    String ip = "";
-
-    for(uint8_t t = 4; t > 0; t--) {
-        delay(DELAY);
-    }
-
-    // disable Access Point mode
-    if(WiFiClass::getMode() & WIFI_AP) {
-        WiFi.softAPdisconnect(true);
-    }
-
-    wiFiMulti->addAP(WIFI_SSID, WIFI_PASS);
-
-    while(wiFiMulti->run() != WL_CONNECTED) {
-        delay(DELAY/10);
-
-        return "";
-    }
-
-    ip = WiFi.localIP().toString();
-    M5.Lcd.printf("[SETUP] WiFi Connected %s\n", ip.c_str());
-
-    return ip.c_str();
-}
 
 String Base::readerCard(MFRC522 * mfrc522) {
     String rfid_read = "";
@@ -73,9 +49,10 @@ int Base::readProduct(const String& rfid_read_product_ref) {
     int return_value = BASE_EXIT_CODE::SUCCESS;
 
     if (!rfid_read_product_ref.isEmpty()) {
+        Serial.printf("Token from base: %s\n", Base::getToken().c_str());
         // API response
         String uri = String("/products/ref/")  + rfid_read_product_ref;
-        String api_response =  Request::requestGet(uri.c_str(), this->getToken().c_str());
+        String api_response =  Request::requestGet(uri.c_str(), Base::getToken().c_str());
 
         if (api_response.length()) {
             // Response deserialization
@@ -138,7 +115,6 @@ int Base::readProduct(const String& rfid_read_product_ref) {
                 return_value = BASE_EXIT_CODE::ALREADY_CHECKED;
             }
         } else {
-            Base::printOnLCD(reinterpret_cast<basic_string<char> &&>("No product found : " + api_response));
             return_value = BASE_EXIT_CODE::NO_PRODUCT_FOUND;
         }
     }
@@ -155,7 +131,7 @@ int Base::createMovement() {
                         + String(R"(,"warehouse_id": )") + this->getCurrentWareHouse()
                         + String(R"(,"qty": ")") + String(1)
                         + String("\"}");
-    String response = Request::requestPost(uri.c_str(), data, this->token.c_str());
+    String response = Request::requestPost(uri.c_str(), data, Base::getToken().c_str());
 
     if (response.length()) {
         currentMovementId = response.toInt();
@@ -174,7 +150,7 @@ void Base::commitTransaction(int movement_id) {
                         movement_id + String("}}");
 
     // API Response
-    String response = Request::requestPut(uri.c_str(), data, this->token.c_str());
+    String response = Request::requestPut(uri.c_str(), data, Base::getToken().c_str());
 
     // Response deserialization
     const char* response_to_be_deserialized = response.c_str();
@@ -198,13 +174,22 @@ void Base::login(const String& data) {
     const char* response_to_be_deserialized = response.c_str();
     JSONVar deserialized_response = JSON.parse(response_to_be_deserialized);
 
-    this->token = (string)deserialized_response["success"]["token"];
+    prefs.begin("api-token", false);
 
-    Serial.printf("My final token : %s\n", this->token.c_str());
+    string deserialized_token = (string)deserialized_response["success"]["token"];
+    prefs.putString("token-str", deserialized_token.c_str());
+
+    prefs.end();
+
+    Serial.printf("My final token : %s\n", Base::getToken().c_str());
 }
 
 string Base::getToken() {
-    return this->token;
+    string tk;
+    prefs.begin("api-token", false);
+    tk = prefs.getString("token-str", "").c_str();
+    prefs.end();
+    return tk;
 }
 
 void Base::printOnLCD(const string& message) {

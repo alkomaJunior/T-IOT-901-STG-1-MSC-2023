@@ -30,22 +30,25 @@ void StepMotor::step_motor_configuration() {
     stepper_motor_driver.setMode("absolute");
 }
 
-String StepMotor::step_motor_status()
-{
-    return stepper_motor_driver.readStatus();
-}
-
 void StepMotor::step_motor_run(int axes, int speed) {
-    stepper_motor_driver.setMotor(axes,axes,axes,speed);
+    stepper_motor_driver.setMotor(axes,axes,axes, speed);
     stepper_motor_driver.setMotor(0,0,0,speed);
 }
 
-void StepMotor::step_motor_inlock() {
-    stepper_motor_driver.unLock();
+void StepMotor::step_motor_run_back(int axes, int speed) {
+    stepper_motor_driver.setMotor(axes,axes,axes, speed);
 }
 
 void StepMotor::step_motor_unlock() {
     stepper_motor_driver.unLock();
+}
+
+void StepMotor::step_motor_wait_idle() {
+    stepper_motor_driver.waitIdle();
+}
+
+String StepMotor::step_motor_status() {
+    return stepper_motor_driver.readStatus().c_str();
 }
 
 StepMotor::StepMotor() = default;

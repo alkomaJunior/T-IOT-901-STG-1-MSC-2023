@@ -26,7 +26,7 @@
 
 enum BASE_EXIT_CODE {
     SUCCESS,
-    ERROR,
+    EXIT_ERROR,
     ALREADY_CHECKED,
     NO_PRODUCT_FOUND,
 };
@@ -63,13 +63,6 @@ public:
 /**********************************************************************************************************************/
 
     /**
-     * Connect to Wifi
-     * @param WiFiMulti
-     */
-    static String wifi_connect(WiFiMulti * WiFiMulti);
-
-
-    /**
      * @brief Get the product reference. This reference is used to identify the package in the WMS database
      * @param rfid_param
      * @return return the product reference or null if not found
@@ -96,9 +89,13 @@ public:
      * @param data
      * @return
      */
-    void login(const String& data);
+    static void login(const String& data);
 
-    string getToken();
+    /**
+     * @brief This method return the api token
+     * @return
+     */
+    static string getToken();
 
     /**
      * @brief This method is used to print messages on M5Stack LCD
@@ -152,7 +149,6 @@ public:
     int getCurrentProductExit() const;
 };
 #endif
-
 
 
 
