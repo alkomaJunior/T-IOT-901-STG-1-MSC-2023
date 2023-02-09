@@ -21,25 +21,25 @@
 /* PUBLIC METHODS CODE                                                                                                */
 /**********************************************************************************************************************/
 
-String Request::requestGet(const String& url, const String& token) {
+String Request::requestGet(String url, String token) {
     return Request::requestGeneric(url, HTTP_GET, token);
 }
 
-String Request::requestPost(const String& url, const String& data, const String& token) {
+String Request::requestPost(String url, String data, String token) {
     return Request::requestGeneric(url, HTTP_POST, token, data);
 }
 
-String Request::requestPut(const String& url, const String& data, const String& token) {
+String Request::requestPut(String url, String data, String token) {
     return Request::requestGeneric(url, HTTP_PUT, token, data);
 }
 
-String Request::requestGeneric(const String& url, enum HTTP_METHOD method, const String& token, const String& data) {
+String Request::requestGeneric(String url, enum HTTP_METHOD method, String token, String data) {
     // wait for Wi-Fi connection
-    if ((WiFiClass::status() == WL_CONNECTED)) {
+    if ((WiFi.status() == WL_CONNECTED)) {
         WiFiClient client;
         HTTPClient http;
 
-        M5.Lcd.print("[HTTP] begin...\n");
+        Serial.printf("[HTTP] begin...\n");
 
         // configure tagged server and url
         String uri = API_URL + url;
@@ -48,6 +48,7 @@ String Request::requestGeneric(const String& url, enum HTTP_METHOD method, const
         http.addHeader("Content-Type", "application/json");
 
         if (token.length() > 0) {
+            Serial.printf("Token: %s\n", token.c_str());
             const String HEADER = String(DOLAPIKEY);
             http.addHeader(HEADER, token);
         }
@@ -77,7 +78,7 @@ String Request::requestGeneric(const String& url, enum HTTP_METHOD method, const
             }
         } else {
             const String& payload = http.getString();
-            Serial.printf("[HTTP] GET... failed, error: %s\n", payload.c_str());
+            M5.Lcd.printf("[HTTP] GET... failed, error: %s\n", payload.c_str());
         }
 
         http.end();

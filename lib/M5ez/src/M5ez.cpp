@@ -692,37 +692,41 @@ String ezButtons::wait(String buttons /* = "" */) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ezMenu ezSettings::menuObj ("Settings menu");
+ezMenu ezSettings::start_menuObj ("Start menu");
 
 void ezSettings::begin() {
+    start_menuObj.txtSmall();
+    start_menuObj.buttons("up#Back#select##down#");
+
 	menuObj.txtSmall();
 	menuObj.buttons("up#Back#select##down#");
-	#ifdef M5EZ_WIFI
-		ez.wifi.begin();
-	#endif
-	#ifdef M5EZ_BLE
-		ez.ble.begin();
-	#endif
-	#ifdef M5EZ_BATTERY
-		ez.battery.begin();
-	#endif
-	#ifdef M5EZ_CLOCK
-		ez.clock.begin();
-	#endif
-	#ifdef M5EZ_BACKLIGHT
-		ez.backlight.begin();
-	#endif
-	#ifdef M5EZ_FACES
-		ez.faces.begin();
-	#endif	
+
+    #ifdef M5EZ_WIFI
+        ez.wifi.begin();
+    #endif
+    #ifdef M5EZ_BATTERY
+        ez.battery.begin();
+    #endif
+    #ifdef M5EZ_BACKLIGHT
+        ez.backlight.begin();
+    #endif
+    #ifdef M5EZ_CONVEYOR_MANAGEMENT
+        ez.conveyor.begin();
+    #endif
 	if (ez.themes.size() > 1) {
 		ez.settings.menuObj.addItem("Theme chooser", ez.theme->menu);
 	}
 	ez.settings.menuObj.addItem("Factory defaults", ez.settings.defaults);
-	
+
+    ez.settings.start_menuObj.addItem("Wi-Fi settings", ez.wifi.menu);
 }
 
 void ezSettings::menu() {
 	menuObj.run();
+}
+
+void ezSettings::start_menu() {
+    start_menuObj.run();
 }
 
 void ezSettings::defaults() {
@@ -1092,6 +1096,187 @@ void ezSettings::defaults() {
 
 #endif
 
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   C O N V E Y O R
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef M5EZ_CONVEYOR_MANAGEMENT
+// Stepper motor
+bool ezConveyor::_on;
+int ezConveyor::_axe_xyz = 1800;
+
+// NFC READER
+MFRC522 mfrc522(0x28);  // Create MFRC522 instance
+
+	void ezConveyor::begin() {
+        // Storing the conveyor state into the nvs
+		Preferences prefs;
+		prefs.begin("M5ez", true);	// read-only
+		_on = prefs.getBool("conveyor_on", false);
+		prefs.end();
+
+        // Stepper motor configuration
+        StepMotor::step_motor_configuration();
+
+        // RFID configuration
+        ez.conveyor.rfid_configuration();
+
+        // Servo motor configuration
+        ServoMotor::servo_motor_configuration();
+
+		if (_on) {
+            _axe_xyz += 1800;
+
+            // run step motor
+			StepMotor::step_motor_run(_axe_xyz, 500);
+		} else {
+            for (int i = 1; i <= 5; ++i) {
+                StepMotor::step_motor_unlock();
+                Serial.println(StepMotor::step_motor_status().c_str());
+                delay(500);
+            }
+        }
+		ez.settings.menuObj.addItem("Conveyor Management", ez.conveyor.menu);
+        ez.addEvent(ez.conveyor.loop);
+	}
+
+	void ezConveyor::menu() {
+		int start_state = _on;
+		while (true) {
+            _axe_xyz += 1800;
+			ezMenu conveyorMenu ("ON/OFF CONVEYOR");
+            conveyorMenu.txtSmall();
+            conveyorMenu.buttons("up#Back#select##down#");
+            conveyorMenu.addItem("on|CONVEYOR\t" + (String)(_on ? "on" : "off"));
+			switch (conveyorMenu.runOnce()) {
+				case 1:
+					_on = !_on;
+					if (_on) {
+                        // Run stepper motor
+                        StepMotor::step_motor_run(_axe_xyz, 500);
+					} else {
+                        for (int i = 1; i <= 5; ++i) {
+                            StepMotor::step_motor_unlock();
+                            Serial.println(StepMotor::step_motor_status().c_str());
+                            delay(500);
+                        }
+                    }
+					break;
+				case 0:
+					if (_on != start_state) {
+						Preferences prefs;
+						prefs.begin("M5ez");
+						prefs.putBool("conveyor_on", _on);
+						prefs.end();
+					}
+					return;
+				//
+			}
+		}
+	}
+
+    uint16_t ezConveyor::loop()
+    {
+        ez.conveyor.core_task();
+        return 1;
+    }
+
+	bool ezConveyor::on() {
+		return _on;
+	}
+
+    void ezConveyor::rfid_configuration() {
+        Wire.begin();  // Wire init, adding the I2C bus.
+        mfrc522.PCD_Init();  // Init MFRC522.
+
+    }
+
+    void ezConveyor::core_task() {
+        // Base which contain everything about NFC
+        Base base;
+
+        // NVS
+        Preferences preferences;
+
+        // Reading the RFID reference and save it into a variable
+        String rfid_read_product_ref = Base::readerCard(&mfrc522);
+        if (rfid_read_product_ref.isEmpty()) {
+            return;
+        }
+
+        // Reading the product from the warehouse db
+        int scan_result = base.readProduct(rfid_read_product_ref);
+
+        // If product found is warehouse db ?
+        if (Base::getToken().length() > 0 && (scan_result  == BASE_EXIT_CODE::SUCCESS || scan_result  == BASE_EXIT_CODE::ALREADY_CHECKED)) {
+            // read exit from nvs and move to the appropriate angle
+            preferences.begin("product-info", false);
+
+            preferences.putInt("pwh", base.getCurrentWareHouse());
+            preferences.putInt("pex", base.getCurrentProductExit());
+            preferences.putString("pid", base.getCurrentProductId().c_str());
+
+            Serial.printf("Redirection from main-nvs: %d\n", preferences.getInt("pex", -1));
+
+            if (preferences.getInt("pex", -1) != -1) {
+                ServoMotor::servo_motor_move_arm(preferences.getInt("pex", -1));
+            } else {
+                Serial.println("redirection error");
+            }
+
+
+            preferences.end();
+
+            int movement_id = base.createMovement();
+
+            // Must Commit the Transaction once the product is out of conveyor
+            base.commitTransaction(movement_id);
+        }
+        // If product not found is warehouse db ?
+        else {
+            Preferences prefs;
+            int i = 0;
+            const char* status = StepMotor::step_motor_status().c_str();
+            Serial.println(status);
+
+            for (i = 1; i <= 5; ++i) {
+                StepMotor::step_motor_unlock();
+                Serial.println(StepMotor::step_motor_status().c_str());
+                delay(500);
+            }
+
+            Serial.println("ready to run back");
+
+            _on = false;
+
+            prefs.begin("M5ez");
+            prefs.putBool("conveyor_on", _on);
+            prefs.end();
+
+            StepMotor::step_motor_configuration();
+            StepMotor::step_motor_run_back(70, 200);
+
+            _on = true;
+
+            prefs.begin("M5ez");
+            prefs.putBool("conveyor_on", _on);
+            prefs.end();
+
+            _axe_xyz += 1800;
+            StepMotor::step_motor_configuration();
+            // run step motor
+            StepMotor::step_motor_run(_axe_xyz, 500);
+        }
+    }
+
+#endif
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1299,6 +1484,12 @@ void ezSettings::defaults() {
 	bool ezWifi::_connection(ezMenu* callingMenu) {
 		if (WiFi.isConnected()) {
 			const uint8_t tab = 140;
+            // API User credentials and base cpt
+            Base base;
+            const String api_user_data = "{\"login\":\"" API_USER "\", \"password\":\"" API_PASSWORD "\"}";
+
+            Base::login(api_user_data);
+
 			ez.screen.clear();
 			ez.header.show("Current wifi connection");
 			ez.canvas.font(&FreeSans9pt7b);
@@ -1312,6 +1503,8 @@ void ezSettings::defaults() {
 			ez.canvas.print("Router IP:"); ez.canvas.x(tab); ez.canvas.println(WiFi.gatewayIP().toString());
 			ez.canvas.print("Router BSSID:"); ez.canvas.x(tab); ez.canvas.println(WiFi.BSSIDstr());
 			ez.canvas.print("DNS IP:"); ez.canvas.x(tab); ez.canvas.println(WiFi.dnsIP(0).toString());
+            ez.canvas.printf("Token state: %s", base.getToken().c_str());
+
 			if (WiFi.dnsIP(1)) { ez.canvas.x(tab); ez.canvas.println(WiFi.dnsIP(1).toString()); }
 			String pressed = ez.buttons.wait("Back#Disconnect#");
 			if (pressed == "Back") return true;

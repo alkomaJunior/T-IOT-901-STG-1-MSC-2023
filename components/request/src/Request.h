@@ -59,13 +59,13 @@ public:
 /**********************************************************************************************************************/
 
     /**
-     * @brief This method is used to send a request with the method GET/POST/PUT/DELETE
-     * @param url
-     * @param data
-     * @param useToken
-     * @return
-     */
-    static String requestGeneric(const String& url, enum HTTP_METHOD method, const String& token = "", const String& data = "");
+    * @brief This method is used to send a request with the method GET/POST/PUT/DELETE
+    * @param url
+    * @param data
+    * @param useToken
+    * @return
+    */
+    static String requestGeneric(String url, enum HTTP_METHOD method, String token = "", String data = "");
 
     /**
      * @brief This method is used to send a get request
@@ -74,7 +74,7 @@ public:
      * @param useToken
      * @return
      */
-    static String requestGet(const String& url, const String& token = "");
+    static String requestGet(String url, String token = "");
 
     /**
      * @brief This method is used to send a post request
@@ -83,7 +83,7 @@ public:
      * @param useToken
      * @return
      */
-    static String requestPost(const String& url, const String& data, const String& token = "");
+    static String requestPost(String url, String data, String token = "");
 
     /**
      * @brief This method is used to send a put request
@@ -92,7 +92,7 @@ public:
      * @param useToken
      * @return
      */
-    static String requestPut(const String& url, const String& data, const String& token = "");
+    static String requestPut(String url, String data, String token = "");
 };
 
 

@@ -26,10 +26,18 @@
 #define M5EZ_BACKLIGHT
 
 // Compile in ezTime and create a settings menu for clock display
-#define M5EZ_CLOCK
+//#define M5EZ_CLOCK
 
 // FACES settings menu
-#define M5EZ_FACES
+//#define M5EZ_FACES
+
+// Conveyor management menu
+#define M5EZ_CONVEYOR_MANAGEMENT
+#ifdef M5EZ_CONVEYOR_MANAGEMENT
+#include "StepMotor.h"
+#include "Base.h"
+#include "ServoMotor.h"
+#endif
 
 #include <vector>			// std::vector
 #ifdef M5EZ_WIFI
@@ -432,8 +440,10 @@ class ezSettings {
 	public:
 		static void begin();
 		static void menu();
+		static void start_menu();
 		static void defaults();
 		static ezMenu menuObj;
+		static ezMenu start_menuObj;
 	//
 };
 
@@ -512,6 +522,30 @@ class ezSettings {
 			static bool on();
 		private:
 			static bool _on;
+		//
+	};
+#endif
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   CONVEYOR MANAGEMENT MENU
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef M5EZ_CONVEYOR_MANAGEMENT
+class ezConveyor {
+		public:
+			static void begin();
+			static void menu();
+			static bool on();
+            static uint16_t loop();
+            static void rfid_configuration();
+            static void core_task();
+		private:
+			static bool _on;
+			static int _axe_xyz;
 		//
 	};
 #endif
@@ -691,7 +725,10 @@ class M5ez {
 		#endif
 		#ifdef M5EZ_FACES
 			static ezFACES faces;
-		#endif	
+        #endif
+        #ifdef M5EZ_CONVEYOR_MANAGEMENT
+            static ezConveyor conveyor;
+        #endif
 		
 		static void begin();
 
