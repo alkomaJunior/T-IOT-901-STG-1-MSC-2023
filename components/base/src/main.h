@@ -99,8 +99,8 @@
 
 // EXITS
 #define LEFT_EXIT 1099
-#define MIDDLE_EXIT 900
-#define RIGHT_EXIT 800
+#define MIDDLE_EXIT 890
+#define RIGHT_EXIT 780
 
 using namespace std;
 

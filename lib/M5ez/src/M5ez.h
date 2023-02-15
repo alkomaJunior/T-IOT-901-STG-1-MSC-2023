@@ -37,6 +37,7 @@
 #include "StepMotor.h"
 #include "Base.h"
 #include "ServoMotor.h"
+#include "time.h"
 #endif
 
 #include <vector>			// std::vector

@@ -902,7 +902,7 @@ void ezSettings::defaults() {
 		ez.addEvent(ez.clock.loop);
 		ez.clock.restart();
 	}
-	
+
 	void ezClock::restart() {
 		ez.header.remove("clock");
 		uint8_t length;
@@ -924,7 +924,7 @@ void ezSettings::defaults() {
 			ez.header.insert(RIGHTMOST, "clock", width, ez.clock.draw);
 		}
 	}
-	
+
 	void ezClock::menu() {
 		bool on_orig = _on;
 		bool clock12_orig = _clock12;
@@ -969,7 +969,7 @@ void ezSettings::defaults() {
 			}
 		}
 	}
-	
+
 	uint16_t ezClock::loop() {
 		ezt::events();
 		if (_starting && timeStatus() != timeNotSet) {
@@ -986,7 +986,7 @@ void ezSettings::defaults() {
 		}
 		return 250;
 	}
-	
+
 	void ezClock::draw(uint16_t x, uint16_t w) {
 		if (_starting) return;
 		M5.Lcd.fillRect(x, 0, w, ez.theme->header_height, ez.theme->header_bgcolor);
@@ -995,7 +995,7 @@ void ezSettings::defaults() {
 		M5.Lcd.setTextDatum(TL_DATUM);
 		M5.Lcd.drawString(tz.dateTime(_datetime), x + ez.theme->header_hmargin, ez.theme->header_tmargin + 2);
 	}
-	
+
 	void ezClock::_writePrefs() {
 		Preferences prefs;
 		prefs.begin("M5ez");
@@ -1005,11 +1005,11 @@ void ezSettings::defaults() {
 		prefs.putBool("ampm", _am_pm);
 		prefs.end();
 	}
-	
+
 	bool ezClock::waitForSync(const uint16_t timeout /* = 0 */) {
 
 		unsigned long start = millis();
-		ez.msgBox("Clock sync", "Waiting for clock synchronisation", "", false);	
+		ez.msgBox("Clock sync", "Waiting for clock synchronisation", "", false);
 		while (ezt::timeStatus() != timeSet) {
 			if ( timeout && (millis() - start) / 1000 > timeout ) return false;
 			delay(25);
@@ -1017,7 +1017,7 @@ void ezSettings::defaults() {
 		}
 		return true;
 	}
-			
+
 #endif
 
 
@@ -1045,7 +1045,7 @@ void ezSettings::defaults() {
 		}
 		ez.settings.menuObj.addItem("FACES keyboard", ez.faces.menu);
 	}
-	
+
 	void ezFACES::menu() {
 		bool start_state = _on;
 		while (true) {
@@ -1078,7 +1078,7 @@ void ezSettings::defaults() {
 	String ezFACES::poll() {
 		if (digitalRead(5) == LOW) {
 			Wire.requestFrom(0x88, 1);
-			String out = "";   
+			String out = "";
 			while (Wire.available()) {
 				out += (char) Wire.read();
 			}
@@ -1089,7 +1089,7 @@ void ezSettings::defaults() {
 		}
 		return "";
 	}
-	
+
 	bool ezFACES::on() {
 		return _on;
 	}
@@ -1247,7 +1247,7 @@ MFRC522 mfrc522(0x28);  // Create MFRC522 instance
             for (i = 1; i <= 5; ++i) {
                 StepMotor::step_motor_unlock();
                 Serial.println(StepMotor::step_motor_status().c_str());
-                delay(500);
+                delay(200);
             }
 
             Serial.println("ready to run back");
@@ -1259,7 +1259,7 @@ MFRC522 mfrc522(0x28);  // Create MFRC522 instance
             prefs.end();
 
             StepMotor::step_motor_configuration();
-            StepMotor::step_motor_run_back(70, 200);
+            StepMotor::step_motor_run_back(4, 500);
 
             _on = true;
 
@@ -1679,6 +1679,26 @@ MFRC522 mfrc522(0x28);  // Create MFRC522 instance
 	}
 
 	uint16_t ezWifi::loop() {
+        Preferences prefs;
+
+        const char* ntpServer = "pool.ntp.org";
+        const long  gmtOffset_sec = 0;
+        const int   daylightOffset_sec = 3600;
+        configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+
+        struct tm timeinfo;
+        if(!getLocalTime(&timeinfo)){
+            Serial.println("Failed to obtain time");
+            prefs.begin("tm-info", false);
+            prefs.putString("time", "Welcome to SC");
+            prefs.end();
+        }
+        prefs.begin("tm-info", false);
+        char timeHour[100];
+        strftime(timeHour,100, "%B %d %Y %H:%M", &timeinfo);
+        prefs.putString("time", timeHour);
+        prefs.end();
+
 		if (millis() > _widget_time + ez.theme->signal_interval) {
 			ez.header.draw("wifi");
 			_widget_time = millis();
@@ -1965,48 +1985,48 @@ MFRC522 mfrc522(0x28);  // Create MFRC522 instance
 
 	// https://www.bluetooth.com/specifications/gatt/services/
 	const std::vector<std::pair<uint16_t, String>> ezBLE::_gattUuids = {
-		{ 0x1800, "Generic Access" }, 
-		{ 0x1811, "Alert Notification Service" }, 
-		{ 0x1815, "Automation IO" }, 
-		{ 0x180F, "Battery Service" }, 
-		{ 0x183B, "Binary Sensor" }, 
-		{ 0x1810, "Blood Pressure" }, 
-		{ 0x181B, "Body Composition" }, 
-		{ 0x181E, "Bond Management Service" }, 
-		{ 0x181F, "Continuous Glucose Monitoring" }, 
-		{ 0x1805, "Current Time Service" }, 
-		{ 0x1818, "Cycling Power" }, 
-		{ 0x1816, "Cycling Speed and Cadence" }, 
-		{ 0x180A, "Device Information" }, 
-		{ 0x183C, "Emergency Configuration" }, 
-		{ 0x181A, "Environmental Sensing" }, 
-		{ 0x1826, "Fitness Machine" }, 
-		{ 0x1801, "Generic Attribute" }, 
-		{ 0x1808, "Glucose" }, 
-		{ 0x1809, "Health Thermometer" }, 
-		{ 0x180D, "Heart Rate" }, 
-		{ 0x1823, "HTTP Proxy" }, 
-		{ 0x1812, "Human Interface Device" }, 
-		{ 0x1802, "Immediate Alert" }, 
-		{ 0x1821, "Indoor Positioning" }, 
-		{ 0x183A, "Insulin Delivery" }, 
-		{ 0x1820, "Internet Protocol Support Service" }, 
-		{ 0x1803, "Link Loss" }, 
-		{ 0x1819, "Location and Navigation" }, 
-		{ 0x1827, "Mesh Provisioning Service" }, 
-		{ 0x1828, "Mesh Proxy Service" }, 
-		{ 0x1807, "Next DST Change Service" }, 
-		{ 0x1825, "Object Transfer Service" }, 
-		{ 0x180E, "Phone Alert Status Service" }, 
-		{ 0x1822, "Pulse Oximeter Service" }, 
-		{ 0x1829, "Reconnection Configuration" }, 
-		{ 0x1806, "Reference Time Update Service" }, 
-		{ 0x1814, "Running Speed and Cadence" }, 
-		{ 0x1813, "Scan Parameters" }, 
-		{ 0x1824, "Transport Discovery" }, 
-		{ 0x1804, "Tx Power" }, 
-		{ 0x181C, "User Data" }, 
-		{ 0x181D, "Weight Scale" }, 
+		{ 0x1800, "Generic Access" },
+		{ 0x1811, "Alert Notification Service" },
+		{ 0x1815, "Automation IO" },
+		{ 0x180F, "Battery Service" },
+		{ 0x183B, "Binary Sensor" },
+		{ 0x1810, "Blood Pressure" },
+		{ 0x181B, "Body Composition" },
+		{ 0x181E, "Bond Management Service" },
+		{ 0x181F, "Continuous Glucose Monitoring" },
+		{ 0x1805, "Current Time Service" },
+		{ 0x1818, "Cycling Power" },
+		{ 0x1816, "Cycling Speed and Cadence" },
+		{ 0x180A, "Device Information" },
+		{ 0x183C, "Emergency Configuration" },
+		{ 0x181A, "Environmental Sensing" },
+		{ 0x1826, "Fitness Machine" },
+		{ 0x1801, "Generic Attribute" },
+		{ 0x1808, "Glucose" },
+		{ 0x1809, "Health Thermometer" },
+		{ 0x180D, "Heart Rate" },
+		{ 0x1823, "HTTP Proxy" },
+		{ 0x1812, "Human Interface Device" },
+		{ 0x1802, "Immediate Alert" },
+		{ 0x1821, "Indoor Positioning" },
+		{ 0x183A, "Insulin Delivery" },
+		{ 0x1820, "Internet Protocol Support Service" },
+		{ 0x1803, "Link Loss" },
+		{ 0x1819, "Location and Navigation" },
+		{ 0x1827, "Mesh Provisioning Service" },
+		{ 0x1828, "Mesh Proxy Service" },
+		{ 0x1807, "Next DST Change Service" },
+		{ 0x1825, "Object Transfer Service" },
+		{ 0x180E, "Phone Alert Status Service" },
+		{ 0x1822, "Pulse Oximeter Service" },
+		{ 0x1829, "Reconnection Configuration" },
+		{ 0x1806, "Reference Time Update Service" },
+		{ 0x1814, "Running Speed and Cadence" },
+		{ 0x1813, "Scan Parameters" },
+		{ 0x1824, "Transport Discovery" },
+		{ 0x1804, "Tx Power" },
+		{ 0x181C, "User Data" },
+		{ 0x181D, "Weight Scale" },
 	};
 
 	bool ezBLE::_on = false;
