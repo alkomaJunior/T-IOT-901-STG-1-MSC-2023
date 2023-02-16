@@ -66,11 +66,11 @@ void setup() {
     StepMotor::step_motor_run_back(-10, 600);
 
     // read last product exit from the nvs
-    preferences.begin("product-info", false);
-
     ServoMotor::servo_motor_configuration();
     ServoMotor::servo_motor_move_arm(MIDDLE_EXIT);
 
+    preferences.begin("product-info", false);
+    ServoMotor::servo_motor_move_arm(preferences.getInt("pex", MIDDLE_EXIT));
     preferences.end();
 }
 

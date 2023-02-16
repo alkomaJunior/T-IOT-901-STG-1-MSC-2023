@@ -27,7 +27,7 @@ GRBL stepper_motor_driver = GRBL(STEPMOTOR_I2C_ADDR);
 void StepMotor::step_motor_configuration() {
     Wire.begin(21, 22);
     stepper_motor_driver.Init(&Wire);
-    stepper_motor_driver.setMode("distance");
+    stepper_motor_driver.setMode("absolute");
 }
 
 void StepMotor::step_motor_run(int axes, int speed) {
