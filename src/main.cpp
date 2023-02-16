@@ -51,6 +51,10 @@ static void menu_configuration()
 /**********************************************************************************************************************/
 
 void setup() {
+    preferences.begin("M5ez");
+    preferences.putBool("conveyor_on", false);
+    preferences.end();
+
     // Menu configuration
     menu_configuration();
 
@@ -59,27 +63,28 @@ void setup() {
 
     // For restructuring packages purpose
     StepMotor::step_motor_configuration();
-    StepMotor::step_motor_run_back(10, 200);
+    StepMotor::step_motor_run_back(-10, 600);
 
     // read last product exit from the nvs
-    preferences.begin("product-info", false);
-
     ServoMotor::servo_motor_configuration();
     ServoMotor::servo_motor_move_arm(MIDDLE_EXIT);
 
+    preferences.begin("product-info", false);
+    ServoMotor::servo_motor_move_arm(preferences.getInt("pex", MIDDLE_EXIT));
     preferences.end();
 }
 
 void loop() {
-
+    preferences.begin("tm-info", false);
     if (WiFi.isConnected()) {
-        M5ez::msgBox("Date...", "SMART CONVEYOR(SC) \n (no running tasks...)", "Menu");
+        M5ez::msgBox(preferences.getString("time", "Welcome to SC").c_str(), "SMART CONVEYOR(SC)", "Menu");
         ezSettings::menu();
     }
     else {
-        M5ez::msgBox("Date...", "WELCOME!!! \n (Please setup a Wi-Fi connection to continue!!!)", "Menu");
+        M5ez::msgBox(preferences.getString("time", "Welcome to SC").c_str(), "WELCOME!!! \n (Please setup a Wi-Fi connection to continue!!!)", "Menu");
         ezSettings::start_menu();
     }
+    preferences.end();
 }
 
 

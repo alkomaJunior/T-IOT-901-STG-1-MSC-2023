@@ -1,6 +1,8 @@
 #include <M5Stack.h>
 #include <M5ez.h>
 
+void OTA_demo();
+
 void setup() {
   ez.begin();
   ezMenu OTA_menu ("OTA via https demo");
