@@ -63,11 +63,11 @@ int main( int argc, char **argv)
 {
     UNITY_BEGIN();
     RUN_TEST(test_readCard);
-    /*RUN_TEST(test_readProduct);
+    RUN_TEST(test_readProduct);
     RUN_TEST(test_getToken_login);
     RUN_TEST(test_create_mvmt);
     RUN_TEST(test_get_current_wh);
     RUN_TEST(test_get_current_pid);
-    RUN_TEST(test_get_current_pex);*/
+    //RUN_TEST(test_get_current_pex);
     UNITY_END();
 }
